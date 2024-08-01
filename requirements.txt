@@ -1,0 +1,9 @@
+flask
+authlib
+requests
+urllib3==1.26.15
+flask_sqlalchemy
+flask_wtf
+psycopg2-binary
+PyJWT
+python-dotenv==1.0.1
