@@ -21,8 +21,10 @@ def register_oauth_clients(app):
             authorize_url=config.get('authorize_url'),
             userinfo_endpoint=config.get('userinfo_endpoint'),
             userinfo_compliance_fix=config.get('userinfo_compliance_fix'),
-            client_kwargs=config.get('client_kwargs', {})
+            client_kwargs=config.get('client_kwargs', {}),
+            jwks_uri=config.get('jwks_uri')
         )
+
 
 def create_app(config_object):
     app = Flask(__name__)
@@ -32,18 +34,7 @@ def create_app(config_object):
     csrf.init_app(app)
     oauth.init_app(app)
 
-    CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'
-
-    # oauth = OAuth(app)
-    oauth.register(
-        name='google',
-        server_metadata_url=CONF_URL,
-        client_kwargs={
-            'scope': 'openid email profile'
-        }
-    )
-    # register_oauth_clients(app)
-
+    register_oauth_clients(app)
 
     with app.app_context():
         from .auth import auth_bp
