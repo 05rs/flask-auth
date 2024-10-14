@@ -13,7 +13,7 @@ jobs:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
     environment:
       name: release
-      url: https://pypi.org/p/flask-auth
+      url: https://pypi.org/p/flask-oauth-guard
     permissions:
       id-token: write
     steps:
