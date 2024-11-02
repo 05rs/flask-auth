@@ -42,7 +42,13 @@ jobs:
       - name: Get Name of Package
         id: package_information
         run: |
-          PACKAGE_NAME=$(python -c "import setuptools; print(setuptools.setup()['name'])")
+          PACKAGE_NAME=$(python -c "
+            import ast
+            with open('setup.py', 'r') as f:
+                tree = ast.parse(f.read(), filename='setup.py')
+                name_node = next((n for n in tree.body if isinstance(n, ast.Assign) and any(t.id == 'NAME' for t in n.targets)), None)
+                print(name_node.value.s if name_node else '')
+                ")
           echo "Package name: $PACKAGE_NAME"
           echo "package_name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
 
