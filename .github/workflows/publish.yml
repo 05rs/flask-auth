@@ -100,10 +100,13 @@ jobs:
           python setup.py sdist bdist_wheel
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/
+
+      - name: List dist directory
+        run: ls -l dist/
 
   pypi_publish:
     name: Upload release to PyPI
@@ -121,7 +124,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist
-          path: dist/
+          path: ./dist/
 
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
