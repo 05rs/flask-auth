@@ -15,7 +15,7 @@ jobs:
       suffix: ${{ steps.release.outputs.suffix }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Extract tag and Details
         id: release
         run: |
@@ -35,20 +35,19 @@ jobs:
           fi
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install setuptools
 
       - name: Get Name of Package
         id: package_information
         run: |
-          PACKAGE_NAME=$(python -c "
-            import ast
-            with open('setup.py', 'r') as f:
-                tree = ast.parse(f.read(), filename='setup.py')
-                name_node = next((n for n in tree.body if isinstance(n, ast.Assign) and any(t.id == 'NAME' for t in n.targets)), None)
-                print(name_node.value.s if name_node else '')
-                ")
+          PACKAGE_NAME=$(python3 setup.py --name)
           echo "Package name: $PACKAGE_NAME"
           echo "package_name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
 
@@ -83,10 +82,10 @@ jobs:
     needs: details
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
@@ -118,7 +117,7 @@ jobs:
 
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
@@ -147,7 +146,7 @@ jobs:
       contents: write
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: ./dist/

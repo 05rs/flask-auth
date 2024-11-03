@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 # Define package metadata
-NAME = "flask-auth-wrapper"
-VERSION = "0.0.5"
+NAME = "flask-oauth-guard"
+VERSION = "0.0.6"
 AUTHOR = "Raghav Sethi"
 AUTHOR_EMAIL = "work.raghavsethi@gmail.com"
 DESCRIPTION = "A Flask extension to add Authentication and Authorization, supports OAuth2"
