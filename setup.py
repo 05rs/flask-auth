@@ -27,6 +27,10 @@ INSTALL_REQUIRES = [
 # Find package structure
 PACKAGES = ["flask_auth_wrapper", "flask_auth_wrapper.models", "flask_auth_wrapper.services"]
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
+
 # Create setup arguments
 setup(
     name=NAME,
@@ -38,6 +42,8 @@ setup(
     license=LICENSE,
     install_requires=INSTALL_REQUIRES,
     packages=PACKAGES,
+    long_description=long_description,
+    long_description_content_type="text/markdown",
 )
 
 # python3 setup.py sdist bdist_wheel
