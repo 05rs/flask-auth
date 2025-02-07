@@ -26,8 +26,8 @@ def register_oauth_clients(app):
         )
 
 
-def create_app(config_object):
-    app = Flask(__name__)
+def create_app(config_object, **kwargs):
+    app = Flask(__name__, **kwargs)
     app.config.from_object(config_object)
 
     db.init_app(app)

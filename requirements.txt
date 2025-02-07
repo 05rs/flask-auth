@@ -7,3 +7,5 @@ flask_wtf
 psycopg2-binary
 PyJWT
 python-dotenv==1.0.1
+mkdocs-material
+mkdocstrings

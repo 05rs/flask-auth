@@ -13,6 +13,7 @@ def token_required(f):
         payload = decode_access_token(token)
         if not payload:
             return jsonify({'message': 'Invalid token'}), 401
+
         kwargs['user'] = {'id': payload.get('id')}
         return f(*args, **kwargs)
     return decorated

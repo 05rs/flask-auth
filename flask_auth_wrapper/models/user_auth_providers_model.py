@@ -7,6 +7,6 @@ class UserAuthProviders(db.Model):
     auth_provider_id = db.Column(db.Integer, db.ForeignKey('auth_providers.id'))
     name = db.Column(db.String(255))
     photo = db.Column(db.String)
-
-    tokens = db.relationship('Tokens', backref='user_auth_provider')
+    password = db.Column(db.String(255))
+    tokens = db.relationship('Tokens', backref='user_auth_providers')
 

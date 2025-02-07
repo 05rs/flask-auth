@@ -9,6 +9,4 @@ class Tokens(db.Model):
     token = db.Column(db.String(255), unique=True)
     refresh_token = db.Column(db.String(255), unique=True)
     revoked = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    token_expires_at = db.Column(db.DateTime)
-    refresh_token_expires_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)

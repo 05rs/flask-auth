@@ -18,7 +18,7 @@ def generate_refresh_token():
 def decode_access_token(token):
     try:
         payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
-        return {'id': payload.get('id')}
+        return {'id': payload.get('id'), 'exp': payload.get('exp') }
     except jwt.ExpiredSignatureError:
         return None
     except jwt.InvalidTokenError:
