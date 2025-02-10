@@ -1,10 +1,8 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf.csrf import CSRFProtect
 from authlib.integrations.flask_client import OAuth
 
 db = SQLAlchemy()
-csrf = CSRFProtect()
 oauth = OAuth()
 
 
@@ -31,7 +29,6 @@ def create_app(config_object, **kwargs):
     app.config.from_object(config_object)
 
     db.init_app(app)
-    csrf.init_app(app)
     oauth.init_app(app)
 
     register_oauth_clients(app)

@@ -27,8 +27,15 @@ def find_user_and_provider(user_email, provider):
     return existing_user, auth_provider
 
 
-def get_user_by_token(token: Tokens):
-    return Users.query.filter(Users.auth_providers.any(id=token.user_auth_provider_id), Users.enabled == True).first()
+def get_user_auth_provider_by_token(token: Tokens):
+    return UserAuthProviders.query.get(token.user_auth_provider_id)
+
+
+def get_user_provider_by_user_auth_provider(user_auth_provider: UserAuthProviders):
+    user = Users.query.filter_by(id=user_auth_provider.user_id, enabled=True).first()
+    provider = AuthProviders.query.get(user_auth_provider.auth_provider_id)
+    return user, provider
+
 
 def get_profile_avatar(name):
     if name is None:
@@ -74,3 +81,13 @@ def add_token(user_auth_provider, access_token, refresh_token):
         revoked=False,
         created_at=datetime.now(tz=timezone.utc),
     )
+
+
+def get_user_details(ua_id, user_email):
+    user_auth_provider = UserAuthProviders.query.filter_by(id=ua_id).first()
+    return dict(
+        name=user_auth_provider.name,
+        email=user_email,
+        photo=user_auth_provider.photo
+    )
+
