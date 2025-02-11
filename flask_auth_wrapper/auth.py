@@ -1,5 +1,5 @@
 import logging
-
+import os
 from authlib.integrations.base_client import MismatchingStateError
 from flask import Blueprint, request, jsonify, session, redirect, url_for, render_template
 
@@ -57,7 +57,7 @@ def login(provider):
     if not client:
         logger.error(f"OAuth client for provider '{provider}' not found")
         raise InvalidProviderError(f"OAuth client for provider '{provider}' not found.")
-    redirect_uri = url_for('auth.auth', provider=provider, _external=True)
+    redirect_uri = url_for('auth.auth', provider=provider, _external=True, _scheme=os.environ.get('REDIRECT_URL_SCHEME', 'http'))
     logger.debug(f"Redirect URI generated: {redirect_uri}")
     return client.authorize_redirect(redirect_uri)
 
