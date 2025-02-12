@@ -11,9 +11,6 @@ from ..utils import decode_access_token
 
 def validate_refresh_token(refresh_token):
     _token = Tokens.query.filter_by(refresh_token=refresh_token, revoked=False).first()
-    payload = decode_access_token(_token.token)
-    if not payload:
-        raise TokenExpiredException()
     if not _token:
         raise InvalidRefreshTokenError(message='Invalid Refresh Token!')
     return _token
