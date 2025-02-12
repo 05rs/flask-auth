@@ -29,5 +29,10 @@ class InvalidRefreshTokenError(ValidationError):
     pass
 
 
+class TokenExpiredException(ValidationError):
+    default_code = 401
+    default_message = "Token Expired!"
+    pass
+
 class InvalidProviderError(ValidationError):
     pass

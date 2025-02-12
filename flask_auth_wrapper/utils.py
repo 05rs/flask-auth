@@ -1,3 +1,4 @@
+import os
 import time
 import uuid
 
@@ -9,7 +10,7 @@ def create_access_token(user, user_auth_provider):
     payload = {'ua_id': user_auth_provider.id,
                'user_email': user.email,
                'user_name': user_auth_provider.name,
-               'exp': time.time() + 3600
+               'exp': time.time() + int(os.environ.get("TOKEN_EXPIRY", 600))
                }  # 1 hour expiry
     token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
     return token

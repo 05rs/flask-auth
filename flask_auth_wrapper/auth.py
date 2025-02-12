@@ -1,7 +1,7 @@
 import logging
 import os
 from authlib.integrations.base_client import MismatchingStateError
-from flask import Blueprint, request, jsonify, session, redirect, url_for, render_template
+from flask import Blueprint, request, jsonify, session, url_for, render_template
 
 
 
@@ -108,7 +108,8 @@ def auth(provider):
     user_email = user_info.get('email')
 
     if not user_email:
-        return redirect('/')
+        logger.error("Oauth: Did not received user email in metadata")
+        return jsonify({'message': 'Something went wrong...'}), 400
 
     logger.info(f"User authenticated with email: {user_email}")
 
@@ -137,7 +138,7 @@ def auth(provider):
     return jsonify({'access_token': access_token, 'refresh_token': refresh_token})
 
 
-@auth_bp.route('/refresh', methods=['POST'])
+@auth_bp.route('/refresh', methods=['GET'])
 def refresh():
     auth_header = request.headers.get('Authorization', None)
     if not auth_header:
@@ -196,10 +197,13 @@ def whoami(ua_id, user_email, **kwargs):
 
 @auth_bp.route('/logout')
 @token_required
-def logout(user, **kwargs):
+def logout(**kwargs):
+    logger.info(f"Received request for logout")
     auth_header = request.headers.get('Authorization')
     request_token = auth_header.split()[1]
     _token = Tokens.query.filter_by(token=request_token)
     revoke_tokens(token=_token)
     db.session.commit()
-    return redirect('/')
+    _message = f"{kwargs.get('user_email', 'User')} successfully logged out."
+    logger.info(_message)
+    return jsonify(dict(message=_message))

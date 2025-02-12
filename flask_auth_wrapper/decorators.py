@@ -1,6 +1,8 @@
 import logging
 from functools import wraps
 from flask import request, jsonify
+
+from .exceptions import TokenExpiredException
 from .utils import decode_access_token
 logger = logging.getLogger(__name__)
 
@@ -22,9 +24,13 @@ def token_required(f):
             logger.error("Malformed Authorization header format")
             return jsonify({'message': 'Invalid Authorization header format. Expected: Bearer <token>'}), 401
         logger.debug(f"Authorization token received: {token}")
-        payload = decode_access_token(token)
-        if not payload:
-            return jsonify({'message': 'Invalid token'}), 401
+        try:
+            payload = decode_access_token(token)
+            if not payload:
+                raise TokenExpiredException()
+        except TokenExpiredException as e:
+            logger.error(f"Token expired: {str(e)}")
+            return jsonify(dict(message=e.message, code=e.code)), e.code
         payload.pop('exp', None)
         logger.debug(f"Token payload after decoding: {payload}")
         return f(*args, **payload)
