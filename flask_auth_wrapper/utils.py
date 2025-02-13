@@ -1,17 +1,21 @@
 import os
 import time
 import uuid
+import datetime
 
 import jwt
 from flask import current_app
 
 
 def create_access_token(user, user_auth_provider):
+    expiry_time = datetime.datetime.utcnow() + datetime.timedelta(seconds=int(os.environ.get("TOKEN_EXPIRY", 600)))
     payload = {'ua_id': user_auth_provider.id,
                'user_email': user.email,
                'user_name': user_auth_provider.name,
-               'exp': time.time() + int(os.environ.get("TOKEN_EXPIRY", 600))
-               }  # 1 hour expiry
+               'exp': expiry_time,
+               'iat': datetime.datetime.utcnow(),
+               'jti': os.urandom(16).hex()
+               }
     token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
     return token
 

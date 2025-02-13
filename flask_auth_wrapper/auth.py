@@ -1,9 +1,7 @@
 import logging
 import os
 from authlib.integrations.base_client import MismatchingStateError
-from flask import Blueprint, request, jsonify, session, url_for, render_template
-
-
+from flask import Blueprint, request, jsonify, session, url_for, render_template, redirect
 
 from . import oauth, db
 from .decorators import token_required
@@ -134,8 +132,9 @@ def auth(provider):
     db.session.add(user_auth_provider)
     db.session.add(token)
     db.session.commit()
+    frontend_redirect_url = os.getenv("FRONTEND_REDIRECT_URL", "http://localhost:4200/auth/sign-in")
+    return redirect(f"{frontend_redirect_url}?access_token={access_token}&refresh_token={refresh_token}")
 
-    return jsonify({'access_token': access_token, 'refresh_token': refresh_token})
 
 
 @auth_bp.route('/refresh', methods=['GET'])

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 # Define package metadata
 NAME = "flask-oauth-guard"
-VERSION = "0.0.85"
+VERSION = "0.0.86"
 AUTHOR = "Raghav Sethi"
 AUTHOR_EMAIL = "work.raghavsethi@gmail.com"
 DESCRIPTION = "A Flask extension to add Authentication and Authorization, supports OAuth2"
