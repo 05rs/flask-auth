@@ -16,7 +16,7 @@ def create_access_token(user, user_auth_provider):
                'iat': datetime.datetime.utcnow(),
                'jti': os.urandom(16).hex()
                }
-    token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+    token = jwt.encode(payload, os.environ.get('SECRET_KEY'), algorithm='HS256')
     return token
 
 
@@ -26,7 +26,7 @@ def generate_refresh_token():
 
 def decode_access_token(token):
     try:
-        payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        payload = jwt.decode(token, os.environ.get('SECRET_KEY'), algorithms=['HS256'])
         return payload
     except jwt.ExpiredSignatureError:
         return None
