@@ -19,17 +19,26 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 def handle_auth_error(ex):
     logger.error(f"Exception in endpoint {request.endpoint}: {ex}", exc_info=True)
 
-    error_map = {
-        MismatchingStateError: {"code": 403, "message": ex.description, "error_type": "CSRFError"},
-        UserNotFoundException: {"code": ex.code, "message": ex.message, "details": ex.details, "error_type": ex.__class__.__name__},
-        InvalidProviderError: {"code": ex.code, "message": ex.message, "details": ex.details, "error_type": ex.__class__.__name__},
-        InvalidRefreshTokenError: {"code": ex.code, "message": ex.message, "details": ex.details, "error_type": ex.__class__.__name__},
-        ValidationError: {"code": ex.code, "message": ex.message, "details": ex.details, "error_type": ex.__class__.__name__},
-    }
-    if ex.__class__ in error_map:
-        return jsonify(error_map[ex.__class__]), error_map[ex.__class__]["code"]
+    def response(code: int, message: str, details: dict = None, error_type: str = None):
+        response_data = {
+            'code': code,
+            'message': message
+        }
+        if details:
+            response_data['details'] = details
+        if error_type:
+            response_data['error_type'] = error_type
+        return jsonify(response_data), code
 
-    return jsonify({"code": 500, "message": "Something went wrong..."}), 500
+    if isinstance(ex, MismatchingStateError):
+        return response(code=403, message=ex.description, error_type='CSRFError')
+
+    if isinstance(ex, (InvalidProviderError, InvalidRefreshTokenError, ValidationError, UserNotFoundException)):
+        return response(code=ex.code, message=ex.message, details=ex.details, error_type=ex.__class__.__name__)
+
+        # Handle errors specific to the auth blueprint
+    return response(code=500, message='something went wrong...')
+
 
 
 
