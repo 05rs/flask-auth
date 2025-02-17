@@ -1,9 +1,11 @@
+import os
+
 from dotenv import load_dotenv
 
 dotenv_path = './local.env'
 load_dotenv(dotenv_path)
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper())
 logger = logging.getLogger(__name__)
 
 from flask_auth_wrapper import create_app

@@ -19,26 +19,19 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 def handle_auth_error(ex):
     logger.error(f"Exception in endpoint {request.endpoint}: {ex}", exc_info=True)
 
-    def response(code: int, message: str, details: dict = None, error_type: str = None):
-        response_data = {
-            'code': code,
-            'message': message
-        }
-        if details:
-            response_data['details'] = details
-        if error_type:
-            response_data['error_type'] = error_type
-        return jsonify(response_data), code
+    error_map = {
+        MismatchingStateError: {"code": 403, "message": ex.description, "error_type": "CSRFError"},
+        UserNotFoundException: {"code": ex.code, "message": ex.message, "details": ex.details, "error_type": ex.__class__.__name__},
+        InvalidProviderError: {"code": ex.code, "message": ex.message, "details": ex.details, "error_type": ex.__class__.__name__},
+        InvalidRefreshTokenError: {"code": ex.code, "message": ex.message, "details": ex.details, "error_type": ex.__class__.__name__},
+        ValidationError: {"code": ex.code, "message": ex.message, "details": ex.details, "error_type": ex.__class__.__name__},
+    }
+    if ex.__class__ in error_map:
+        return jsonify(error_map[ex.__class__]), error_map[ex.__class__]["code"]
 
-    if isinstance(ex, MismatchingStateError):
-        return response(code=403, message=ex.description, error_type='CSRFError')
+    return jsonify({"code": 500, "message": "Something went wrong..."}), 500
 
 
-    if isinstance(ex, (InvalidProviderError, InvalidRefreshTokenError, ValidationError, UserNotFoundException)):
-        return response(code=ex.code, message=ex.message, details=ex.details, error_type=ex.__class__.__name__)
-
-    # Handle errors specific to the auth blueprint
-    return response(code=500, message='something went wrong...')
 
 
 @auth_bp.route('/')
@@ -98,42 +91,74 @@ def local_login():
 
 @auth_bp.route('<provider>')
 def auth(provider):
-    logger.info(f"OAuth callback for provider: {provider}")
-    client = oauth.create_client(provider)
-    token = client.authorize_access_token()
-    user_info = token.get('userinfo') or client.userinfo()
+    try:
+        logger.info(f"OAuth callback initiated for provider: {provider}")
+        client = oauth.create_client(provider)
+        token = client.authorize_access_token()
+        user_info = token.get('userinfo') or client.userinfo()
 
-    user_email = user_info.get('email')
+        user_email = user_info.get('email')
 
-    if not user_email:
-        logger.error("Oauth: Did not received user email in metadata")
-        return jsonify({'message': 'Something went wrong...'}), 400
+        if not user_email:
+            logger.error("Oauth: Did not received user email in metadata")
+            return jsonify({'message': 'Something went wrong...'}), 400
 
-    logger.info(f"User authenticated with email: {user_email}")
+        logger.info(f"User authenticated with email: {user_email}")
 
-    # find user and provider
-    existing_user, auth_provider = find_user_and_provider(user_email, provider)
+        # find user and provider
+        existing_user, auth_provider = find_user_and_provider(user_email, provider)
 
-    user_auth_provider = update_user_auth_provider(user=existing_user, provider=auth_provider, user_info=user_info)
+        user_auth_provider = update_user_auth_provider(user=existing_user, provider=auth_provider, user_info=user_info)
 
-    access_token = create_access_token(existing_user, user_auth_provider)
-    refresh_token = generate_refresh_token()
+        access_token = create_access_token(existing_user, user_auth_provider)
+        refresh_token = generate_refresh_token()
 
-    logger.info(f"Generated tokens for user: {user_email}")
+        logger.info(f"Generated tokens for user: {user_email}")
 
-    revoked_tokens = revoke_tokens(user_auth_provider=user_auth_provider)
+        revoked_tokens = revoke_tokens(user_auth_provider=user_auth_provider)
 
-    token = add_token(
-        user_auth_provider=user_auth_provider,
-        access_token=access_token,
-        refresh_token=refresh_token
-    )
+        token = add_token(
+            user_auth_provider=user_auth_provider,
+            access_token=access_token,
+            refresh_token=refresh_token
+        )
 
-    db.session.add(user_auth_provider)
-    db.session.add(token)
-    db.session.commit()
-    frontend_redirect_url = os.getenv("FRONTEND_REDIRECT_URL", "http://localhost:4200/auth/sign-in")
-    return redirect(f"{frontend_redirect_url}?access_token={access_token}&refresh_token={refresh_token}")
+        db.session.add(user_auth_provider)
+        db.session.add(token)
+        db.session.commit()
+        oauth_success_redirect_url = os.getenv("OAUTH_SUCCESS_REDIRECT_URL")
+        if oauth_success_redirect_url:
+            logger.info(f"Redirecting user {user_email} to success URL: {oauth_success_redirect_url}")
+            return redirect(f"{oauth_success_redirect_url}?access_token={access_token}&refresh_token={refresh_token}")
+
+        logger.warning("OAUTH_SUCCESS_REDIRECT_URL is not set, returning JSON response instead.")
+
+        return jsonify({
+            "message": "Authentication successful",
+            "access_token": access_token,
+            "refresh_token": refresh_token
+        }), 200
+
+    except UserNotFoundException:
+        logger.error(f"Authentication failed: User not found ({user_email})")
+        return handle_error("User not found. Please register before logging in.")
+    except InvalidProviderError:
+        logger.error(f"Authentication failed: Invalid provider ({provider})")
+        return handle_error("Invalid authentication provider.")
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        return handle_error("An unexpected error occurred. Please try again.")
+
+
+def handle_error(message, status_code=400):
+    """Handles errors by redirecting to the frontend error page or returning JSON."""
+    oauth_failure_redirect_url = os.getenv("OAUTH_FAILURE_REDIRECT_URL")
+
+    if oauth_failure_redirect_url:
+        logger.info(f"Redirecting to failure URL: {oauth_failure_redirect_url} with message: {message}")
+        return redirect(f"{oauth_failure_redirect_url}?message={message}&code={status_code}")
+    logger.warning(f"OAUTH_FAILURE_REDIRECT_URL not set. Returning JSON error: {message}")
+    return jsonify({"error": message, "code": status_code}), status_code
 
 
 
